@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIFCORE® Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{--black:#0a0a0a;--deep:#111;--surface:#181818;--border:#272727;--accent:#f0c040;--accent2:#e05520;--white:#f5f5f0;--muted:#787870;--text:#ccc8c0;--green:#2ecc71;--orange:#f39c12;--blue:#3498db;--red:#e74c3c;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--deep);border:1px solid var(--border);padding:48px 40px;width:100%;max-width:380px}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:5px;color:var(--white);text-align:center;margin-bottom:4px}
+.login-logo span{color:var(--accent)}
+.login-sub{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:32px}
+.login-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+.login-input{width:100%;background:var(--black);border:1px solid var(--border);color:var(--white);font-family:'Barlow',sans-serif;font-size:14px;padding:11px 14px;outline:none;transition:border-color .2s;margin-bottom:16px}
+.login-input:focus{border-color:var(--accent)}
+.login-btn{width:100%;background:var(--accent);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px;text-transform:uppercase;padding:14px;border:none;cursor:pointer;transition:background .2s;margin-top:8px}
+.login-btn:hover{background:var(--white)}
+.login-err{color:var(--accent2);font-size:12px;text-align:center;margin-top:10px;display:none}
+.dashboard{display:none}
+.top-bar{background:var(--deep);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.top-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--white)}
+.top-logo span{color:var(--accent)}
+.top-right{display:flex;align-items:center;gap:12px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.logout-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:6px 14px;cursor:pointer;transition:all .2s}
+.logout-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+.main{padding:32px 28px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat-card{background:var(--deep);border:1px solid var(--border);padding:22px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
+.stat-card.s1::before{background:var(--accent)}
+.stat-card.s2::before{background:var(--green)}
+.stat-card.s3::before{background:var(--blue)}
+.stat-card.s4::before{background:var(--orange)}
+.stat-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--white);line-height:1}
+.filters-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.filter-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:7px 16px;cursor:pointer;transition:all .2s}
+.filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(240,192,64,.08)}
+.search-input{background:var(--deep);border:1px solid var(--border);color:var(--white);font-family:'Barlow',sans-serif;font-size:13px;padding:7px 14px;outline:none;transition:border-color .2s;min-width:220px}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--border)}
+.ml-auto{margin-left:auto}
+.refresh-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:7px 14px;cursor:pointer;transition:all .2s}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+.table-wrap{background:var(--deep);border:1px solid var(--border);overflow-x:auto}
+.orders-table{width:100%;border-collapse:collapse}
+.orders-table th{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);padding:14px 16px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;background:var(--black)}
+.orders-table td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.orders-table tr:last-child td{border-bottom:none}
+.orders-table tr:hover td{background:rgba(255,255,255,.02)}
+.order-ref{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--accent);letter-spacing:1px}
+.order-name{color:var(--white);font-weight:500}
+.order-email{color:var(--muted);font-size:12px}
+.order-items{font-size:12px;color:var(--text);max-width:180px}
+.order-total{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--white)}
+.order-date{color:var(--muted);font-size:12px;white-space:nowrap}
+.status-select{background:var(--surface);border:1px solid var(--border);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;padding:5px 8px;outline:none;cursor:pointer}
+.act-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:12px;padding:5px 10px;cursor:pointer;transition:all .2s;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px}
+.act-btn:hover{border-color:var(--accent);color:var(--accent)}
+.act-btn.del:hover{border-color:var(--red);color:var(--red)}
+.loading{text-align:center;padding:48px;font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin 1s linear infinite;font-size:24px}
+.empty-state{text-align:center;padding:56px 20px;color:var(--border)}
+.empty-state p{font-family:'Barlow Condensed',sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-top:8px}
+.detail-overlay{position:fixed;inset:0;z-index:999;background:rgba(5,5,5,.96);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;padding:20px}
+.detail-overlay.open{opacity:1;pointer-events:all}
+.detail-box{background:var(--deep);border:1px solid var(--border);width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+.detail-head{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0}
+.detail-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--white)}
+.detail-close{background:transparent;border:1px solid var(--border);color:var(--muted);width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.detail-close:hover{border-color:var(--accent2);color:var(--accent2)}
+.detail-body{padding:24px}
+.detail-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-key{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.detail-val{color:var(--white);text-align:right;max-width:60%}
+@media(max-width:768px){
+  .stats-row{grid-template-columns:1fr 1fr;gap:12px}
+  .stat-val{font-size:30px}
+  .main{padding:20px 16px}
+  .top-bar{padding:14px 16px}
+  .search-input{min-width:100%;order:10}
+  .orders-table th:nth-child(4),.orders-table td:nth-child(4){display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">RIF<span>CORE</span>®</div>
+    <div class="login-sub">Admin Dashboard</div>
+    <label class="login-label">Password</label>
+    <input class="login-input" id="pwd" type="password" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Access Dashboard</button>
+    <div class="login-err" id="login-err" style="display:none">Incorrect password</div>
+  </div>
+</div>
+
+<div class="dashboard" id="dashboardWrap">
+  <div class="top-bar">
+    <div class="top-logo">RIF<span>CORE</span>® <span style="font-size:14px;color:var(--muted);letter-spacing:2px">ADMIN</span></div>
+    <div class="top-right">
+      <div style="display:flex;align-items:center;gap:6px;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--green)">
+        <div class="live-dot"></div> Live
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="stats-row">
+      <div class="stat-card s1"><div class="stat-label">Total Orders</div><div class="stat-val" id="stat-total">—</div></div>
+      <div class="stat-card s2"><div class="stat-label">Revenue</div><div class="stat-val" id="stat-revenue">—</div></div>
+      <div class="stat-card s3"><div class="stat-label">Pairs Sold</div><div class="stat-val" id="stat-pairs">—</div></div>
+      <div class="stat-card s4"><div class="stat-label">Pending</div><div class="stat-val" id="stat-pending">—</div></div>
+    </div>
+    <div class="filters-row">
+      <button class="filter-btn active" onclick="filterOrders('all',this)">All</button>
+      <button class="filter-btn" onclick="filterOrders('pending',this)">Pending</button>
+      <button class="filter-btn" onclick="filterOrders('shipped',this)">Shipped</button>
+      <button class="filter-btn" onclick="filterOrders('delivered',this)">Delivered</button>
+      <button class="filter-btn" onclick="filterOrders('cancelled',this)">Cancelled</button>
+      <input class="search-input ml-auto" id="search-input" type="text" placeholder="Search by name, ref, email..." oninput="renderTable()">
+      <button class="refresh-btn" onclick="loadOrders()">↻ Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <table class="orders-table">
+        <thead><tr><th>Ref</th><th>Client</th><th>Items</th><th>Total</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="orders-tbody"><tr><td colspan="7"><div class="loading"><span class="spin">⏳</span><br>Loading...</div></td></tr></tbody>
+      </table>
+      <div class="empty-state" id="empty-state" style="display:none"><div style="font-size:40px">📦</div><p>No orders found</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="detail-box">
+    <div class="detail-head">
+      <div class="detail-title" id="detail-title">Order Details</div>
+      <button class="detail-close" onclick="document.getElementById('detailOverlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+</div>
+
+<script>
+// ── SECURITY CONFIG ──
+// Password is stored as SHA-256 hash — NOT plain text
+// Current password: rifcore2026 → change it and update the hash below
+// To generate a new hash: https://emn178.github.io/online-tools/sha256.html
+const ADMIN_HASH = 'b3c1c9b7f3a2e4d6f8a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3'; // ← replace with your real hash
+
+const SUPABASE_URL  = 'https://zqxgvfryoxhefkakksln.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxeGd2ZnJ5b3hoZWZrYWtrc2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NjI4ODMsImV4cCI6MjA5MDEzODg4M30.6o5QTCTs4_YyOuS92xgXEHITjcIinNpF0zwPlz4pMOo';
+const EMAILJS_PUBLIC_KEY      = '0tMTAajCMFCZGSoMb';
+const EMAILJS_SERVICE_ID      = 'service_6rcj5jr';
+const EMAILJS_TEMPLATE_STATUS = 'YOUR_TEMPLATE_STATUS_ID';
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+(function(){ emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); })();
+
+// ── BRUTE FORCE PROTECTION ──
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 15 * 60 * 1000; // 15 minutes
+
+function getAttempts(){
+  try{ return JSON.parse(sessionStorage.getItem('rc_attempts')||'{"count":0,"time":0}'); }
+  catch(e){ return {count:0,time:0}; }
+}
+function setAttempts(data){ sessionStorage.setItem('rc_attempts', JSON.stringify(data)); }
+function isLockedOut(){
+  const a = getAttempts();
+  if(a.count >= MAX_ATTEMPTS){
+    const remaining = LOCKOUT_MS - (Date.now() - a.time);
+    if(remaining > 0) return Math.ceil(remaining/60000);
+    setAttempts({count:0, time:0});
+  }
+  return false;
+}
+
+// ── SHA-256 HASH ──
+async function sha256(msg){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin(){
+  const errEl = document.getElementById('login-err');
+  const btn   = document.querySelector('.login-btn');
+
+  // Check lockout
+  const locked = isLockedOut();
+  if(locked){
+    errEl.textContent = `Too many attempts. Try again in ${locked} minute(s).`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const inputVal = document.getElementById('pwd').value;
+  if(!inputVal) return;
+
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  const hash = await sha256(inputVal);
+
+  // ⚠️ IMPORTANT: Replace ADMIN_HASH above with sha256('yourpassword')
+  // For now using direct comparison with hashed 'rifcore2026'
+  // sha256('rifcore2026') = run on https://emn178.github.io/online-tools/sha256.html
+  //const correctHash = await sha256('RifC@re#2026!'); // ← remove this line after setting ADMIN_HASH
+
+  btn.textContent = 'Access Dashboard';
+  btn.disabled = false;
+
+  if(hash === correctHash){
+    setAttempts({count:0, time:0});
+    sessionStorage.setItem('rc_admin','1');
+    document.getElementById('loginWrap').style.display    = 'none';
+    document.getElementById('dashboardWrap').style.display = 'block';
+    loadOrders();
+  } else {
+    const a = getAttempts();
+    const newCount = a.count + 1;
+    setAttempts({count: newCount, time: newCount === 1 ? Date.now() : a.time});
+    const remaining = MAX_ATTEMPTS - newCount;
+    errEl.textContent = remaining > 0
+      ? `Incorrect password. ${remaining} attempt(s) remaining.`
+      : `Account locked for 15 minutes due to too many failed attempts.`;
+    errEl.style.display = 'block';
+    document.getElementById('pwd').value = '';
+  }
+}
+
+function doLogout(){
+  sessionStorage.removeItem('rc_admin');
+  sessionStorage.removeItem('rc_attempts');
+  location.reload();
+}
+
+if(sessionStorage.getItem('rc_admin')==='1'){
+  document.getElementById('loginWrap').style.display    = 'none';
+  document.getElementById('dashboardWrap').style.display = 'block';
+}
+
+let allOrders = [];
+let currentFilter = 'all';
+
+async function loadOrders(){
+  document.getElementById('orders-tbody').innerHTML =
+    '<tr><td colspan="7"><div class="loading"><span class="spin">⏳</span><br>Loading orders from Supabase...</div></td></tr>';
+  const { data, error } = await db.from('orders').select('*').order('created_at',{ascending:false});
+  if(error){ console.error(error); return; }
+  allOrders = data || [];
+  renderStats();
+  renderTable();
+}
+
+function renderStats(){
+  const revenue = allOrders.reduce((s,o)=>s+parseFloat(o.total||0),0);
+  const pairs   = allOrders.reduce((s,o)=>s+(o.total_qty||0),0);
+  const pending = allOrders.filter(o=>o.status==='pending').length;
+  document.getElementById('stat-total').textContent   = allOrders.length;
+  document.getElementById('stat-revenue').innerHTML   = '<span style="font-size:20px;color:var(--muted)">€</span>'+revenue.toFixed(2);
+  document.getElementById('stat-pairs').textContent   = pairs;
+  document.getElementById('stat-pending').textContent = pending;
+}
+
+function filterOrders(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable(){
+  const search=(document.getElementById('search-input').value||'').toLowerCase();
+  let orders=[...allOrders];
+  if(currentFilter!=='all') orders=orders.filter(o=>o.status===currentFilter);
+  if(search) orders=orders.filter(o=>(o.ref||'').toLowerCase().includes(search)||(o.name||'').toLowerCase().includes(search)||(o.email||'').toLowerCase().includes(search));
+  const tbody=document.getElementById('orders-tbody');
+  const empty=document.getElementById('empty-state');
+  if(orders.length===0){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=orders.map(o=>{
+    const items=Array.isArray(o.items)?o.items.map(i=>i.qty+'x '+i.size).join(', '):'—';
+    const dateStr=o.date||(o.created_at?o.created_at.slice(0,10):'—');
+    return `<tr>
+      <td><span class="order-ref">${o.ref||'—'}</span></td>
+      <td><div class="order-name">${o.name||'—'}</div><div class="order-email">${o.email||'—'}</div></td>
+      <td><div class="order-items">${items}</div></td>
+      <td><span class="order-total">€${parseFloat(o.total||0).toFixed(2)}</span></td>
+      <td><span class="order-date">${dateStr}</span></td>
+      <td><select class="status-select" onchange="updateStatus('${o.id}','${o.ref}','${o.email}','${o.name}',this.value,this)">
+        <option value="pending" ${o.status==='pending'?'selected':''}>⏳ Pending</option>
+        <option value="shipped" ${o.status==='shipped'?'selected':''}>🚚 Shipped</option>
+        <option value="delivered" ${o.status==='delivered'?'selected':''}>✅ Delivered</option>
+        <option value="cancelled" ${o.status==='cancelled'?'selected':''}>❌ Cancelled</option>
+      </select></td>
+      <td style="display:flex;gap:6px">
+        <button class="act-btn" onclick="viewDetail('${o.id}')">View</button>
+        <button class="act-btn del" onclick="deleteOrder('${o.id}','${o.ref}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateStatus(id,ref,email,name,newStatus,selectEl){
+  selectEl.disabled=true;
+  const {error}=await db.from('orders').update({status:newStatus}).eq('id',id);
+  selectEl.disabled=false;
+  if(error){alert('Failed to update status');return;}
+  const o=allOrders.find(x=>x.id===id);
+  if(o) o.status=newStatus;
+  renderStats();
+  const statusLabels={pending:'⏳ Pending',shipped:'🚚 Shipped',delivered:'✅ Delivered',cancelled:'❌ Cancelled'};
+  emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_STATUS,{
+    order_ref:ref, client_name:name, client_email:email, new_status:statusLabels[newStatus]||newStatus,
+  }).catch(err=>console.warn('Status email failed:',err));
+}
+
+async function deleteOrder(id,ref){
+  if(!confirm('Delete order '+ref+'? This cannot be undone.'))return;
+  const {error}=await db.from('orders').delete().eq('id',id);
+  if(error){alert('Failed to delete');return;}
+  allOrders=allOrders.filter(o=>o.id!==id);
+  renderStats(); renderTable();
+}
+
+function viewDetail(id){
+  const o=allOrders.find(x=>x.id===id);
+  if(!o) return;
+  const items=Array.isArray(o.items)?o.items:[];
+  document.getElementById('detail-title').textContent='Order '+o.ref;
+  document.getElementById('detail-body').innerHTML=`
+    <div class="detail-row"><span class="detail-key">Reference</span><span class="detail-val" style="color:var(--accent)">${o.ref}</span></div>
+    <div class="detail-row"><span class="detail-key">Date</span><span class="detail-val">${o.date||o.created_at?.slice(0,10)||'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val">${o.status}</span></div>
+    <div class="detail-row"><span class="detail-key">Payment</span><span class="detail-val">${o.payment||'—'}</span></div>
+    <div style="border-top:1px solid var(--border);margin:12px 0"></div>
+    <div class="detail-row"><span class="detail-key">Name</span><span class="detail-val">${o.name}</span></div>
+    <div class="detail-row"><span class="detail-key">Email</span><span class="detail-val">${o.email}</span></div>
+    <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val">${o.phone||'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Address</span><span class="detail-val">${o.address||'—'}</span></div>
+    <div style="border-top:1px solid var(--border);margin:12px 0"></div>
+    ${items.map(i=>`<div class="detail-row"><span class="detail-key">${i.size}</span><span class="detail-val">${i.qty} pair(s) × €${parseFloat(o.unit_price).toFixed(2)} = €${(i.qty*o.unit_price).toFixed(2)}</span></div>`).join('')}
+    <div class="detail-row"><span class="detail-key">Total Pairs</span><span class="detail-val">${o.total_qty}</span></div>
+    <div class="detail-row"><span class="detail-key" style="color:var(--accent)">Grand Total</span><span class="detail-val" style="color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:22px">€${parseFloat(o.total).toFixed(2)}</span></div>
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetail(e){if(e.target===document.getElementById('detailOverlay')) document.getElementById('detailOverlay').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape') document.getElementById('detailOverlay').classList.remove('open');});
+
+if(sessionStorage.getItem('rc_admin')==='1') loadOrders();
+setInterval(()=>{if(sessionStorage.getItem('rc_admin')==='1') loadOrders();}, 60000);
+</script>
+</body>
+</html>
