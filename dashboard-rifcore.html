@@ -216,7 +216,7 @@ async function doLogin(){
   // ⚠️ IMPORTANT: Replace ADMIN_HASH above with sha256('yourpassword')
   // For now using direct comparison with hashed 'rifcore2026'
   // sha256('rifcore2026') = run on https://emn178.github.io/online-tools/sha256.html
-  //const correctHash = await sha256('RifC@re#2026!'); // ← remove this line after setting ADMIN_HASH
+  const correctHash = await sha256('RifC@re#2026!'); // ← remove this line after setting ADMIN_HASH
 
   btn.textContent = 'Access Dashboard';
   btn.disabled = false;
