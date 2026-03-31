@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Successful — RIFCORE®</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--black:#0a0a0a;--deep:#111;--surface:#181818;--border:#272727;--accent:#f0c040;--white:#f5f5f0;--muted:#787870;--text:#ccc8c0;--green:#2ecc71;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+nav{background:rgba(10,10,10,.97);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:5px;color:var(--white);text-decoration:none}
+.nav-logo span{color:var(--accent)}
+
+.page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.card{background:var(--deep);border:1px solid var(--border);max-width:600px;width:100%;overflow:hidden}
+
+/* Animated success header */
+.card-header{background:linear-gradient(135deg,#0d3d1a,#1a5c2a);padding:48px 40px;text-align:center;position:relative;overflow:hidden}
+.card-header::before{content:'✓';position:absolute;font-size:200px;color:rgba(46,204,113,.06);top:50%;left:50%;transform:translate(-50%,-50%);line-height:1;font-family:'Barlow Condensed',sans-serif;font-weight:900}
+.checkmark{width:72px;height:72px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;animation:popIn .5s cubic-bezier(.175,.885,.32,1.275) forwards}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,6vw,52px);color:var(--white);letter-spacing:3px;margin-bottom:6px}
+.success-title span{color:#4ade80}
+.success-sub{font-size:14px;color:rgba(255,255,255,.6);font-weight:300}
+
+/* Gold ref box */
+.ref-box{background:var(--black);border:1px solid var(--accent);margin:0 40px;padding:16px 24px;transform:translateY(-1px);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.ref-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.ref-value{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--accent);letter-spacing:4px}
+.ref-copy{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:6px 12px;cursor:pointer;transition:all .2s}
+.ref-copy:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Details */
+.card-body{padding:28px 40px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-key{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.detail-val{color:var(--white);text-align:right}
+.detail-total{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--accent)}
+
+/* Steps */
+.steps{background:var(--black);border:1px solid var(--border);margin:20px 0;padding:20px 24px}
+.steps-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.step{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.step:last-child{margin-bottom:0}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:13px;color:var(--text);line-height:1.5}
+.step-text strong{color:var(--white)}
+
+/* Actions */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.btn-primary{background:var(--accent);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:14px;text-decoration:none;text-align:center;display:block;transition:background .2s}
+.btn-primary:hover{background:var(--white)}
+.btn-secondary{background:transparent;color:var(--muted);border:1px solid var(--border);font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:14px;text-decoration:none;text-align:center;display:block;transition:all .2s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Loading */
+.loading-state{text-align:center;padding:60px 40px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Cancelled state */
+.cancelled{display:none;text-align:center;padding:48px 40px}
+.cancelled-icon{font-size:48px;margin-bottom:16px}
+.cancelled-title{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--white);letter-spacing:2px;margin-bottom:8px}
+.cancelled-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+
+footer{background:var(--deep);border-top:1px solid var(--border);padding:20px 24px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--border)}
+
+@media(max-width:520px){
+  .card-header{padding:36px 24px}
+  .ref-box{margin:0 20px}
+  .card-body{padding:24px 20px}
+  .actions{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">RIF<span>CORE</span>®</a>
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)">Secure Checkout · SSL</div>
+</nav>
+
+<div class="page">
+  <div class="card">
+
+    <!-- LOADING STATE -->
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)">Confirming your payment...</div>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div id="successState" style="display:none">
+      <div class="card-header">
+        <div class="checkmark">✓</div>
+        <div class="success-title">PAYMENT <span>CONFIRMED</span></div>
+        <div class="success-sub">Your order has been placed successfully</div>
+      </div>
+
+      <div class="ref-box">
+        <div>
+          <div class="ref-label">Order Reference</div>
+          <div class="ref-value" id="orderRefDisplay">—</div>
+        </div>
+        <button class="ref-copy" onclick="copyRef()">📋 Copy</button>
+      </div>
+
+      <div class="card-body">
+        <div class="detail-row">
+          <span class="detail-key">Status</span>
+          <span class="detail-val" style="color:var(--green)">✓ Payment Confirmed</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Payment Method</span>
+          <span class="detail-val">💳 Stripe</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Confirmation sent to</span>
+          <span class="detail-val" id="emailDisplay" style="color:var(--accent)">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-key">Date</span>
+          <span class="detail-val" id="dateDisplay">—</span>
+        </div>
+
+        <div class="steps">
+          <div class="steps-title">What happens next · Que se passe-t-il ensuite · Wat gebeurt er nu</div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text"><strong>Confirmation email</strong> — Check your inbox for your order confirmation with all details.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text"><strong>Order processing</strong> — Our team in Mechelen prepares your order within 1–2 business days.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text"><strong>Shipping notification</strong> — You'll receive an email when your boots are on their way.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text"><strong>Delivery</strong> — Expected within 3–5 business days after dispatch from Belgium.</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <a href="tracking.html" class="btn-primary" id="trackLink">📦 Track My Order</a>
+          <a href="index.html" class="btn-secondary">← Back to Store</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANCELLED STATE -->
+    <div class="cancelled" id="cancelledState">
+      <div class="cancelled-icon">❌</div>
+      <div class="cancelled-title">Payment Cancelled</div>
+      <div class="cancelled-sub">
+        No worries — your order was not charged.<br>
+        Your cart details are saved. You can try again whenever you're ready.
+        <br><br>
+        <span id="cancelRef" style="font-family:'Barlow Condensed',sans-serif;letter-spacing:2px;color:var(--accent)"></span>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a href="index.html#buy" class="btn-primary" style="padding:14px 28px">← Try Again</a>
+        <a href="index.html" class="btn-secondary" style="padding:14px 28px">Back to Store</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>RIFCORE® · Adam Solutions BV · Mechelen, Belgium · Secure payment by Stripe</footer>
+
+<script>
+const SUPABASE_URL  = 'https://zqxgvfryoxhefkakksln.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxeGd2ZnJ5b3hoZWZrYWtrc2xuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NjI4ODMsImV4cCI6MjA5MDEzODg4M30.6o5QTCTs4_YyOuS92xgXEHITjcIinNpF0zwPlz4pMOo';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const params = new URLSearchParams(window.location.search);
+const orderRef   = params.get('ref');
+const sessionId  = params.get('session_id');
+const cancelled  = params.get('cancelled');
+
+async function init(){
+  // CANCELLED
+  if(cancelled === 'true'){
+    document.getElementById('loadingState').style.display   = 'none';
+    document.getElementById('cancelledState').style.display = 'block';
+    if(orderRef) document.getElementById('cancelRef').textContent = 'Order Ref: ' + orderRef;
+
+    // Update Supabase status to cancelled if ref exists
+    if(orderRef){
+      await db.from('orders').update({status:'cancelled'}).eq('ref', orderRef);
+    }
+    return;
+  }
+
+  // SUCCESS
+  if(orderRef){
+    // Update order status to paid in Supabase
+    const { error } = await db.from('orders')
+      .update({ status: 'paid', stripe_session: sessionId || '' })
+      .eq('ref', orderRef);
+
+    if(error) console.error('Supabase update error:', error);
+
+    // Fetch order details to display
+    const { data: order } = await db.from('orders').select('*').eq('ref', orderRef).single();
+
+    document.getElementById('loadingState').style.display  = 'none';
+    document.getElementById('successState').style.display = 'block';
+    document.getElementById('orderRefDisplay').textContent = orderRef;
+    document.getElementById('dateDisplay').textContent     = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+    document.getElementById('trackLink').href = 'tracking.html?ref=' + orderRef;
+
+    if(order){
+      document.getElementById('emailDisplay').textContent = order.email || '—';
+    }
+  } else {
+    // No ref — just show generic success
+    document.getElementById('loadingState').style.display  = 'none';
+    document.getElementById('successState').style.display  = 'block';
+    document.getElementById('orderRefDisplay').textContent = 'Check your email';
+    document.getElementById('dateDisplay').textContent     = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  }
+}
+
+function copyRef(){
+  navigator.clipboard.writeText(orderRef || '').then(()=>{
+    const btn = document.querySelector('.ref-copy');
+    btn.textContent = '✓ Copied!';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(()=>{ btn.textContent='📋 Copy'; btn.style.color=''; btn.style.borderColor=''; }, 2000);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
